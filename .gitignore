@@ -1,0 +1,11 @@
+build/
+Catch2/
+.vscode/
+.idea/
+
+# MacOS
+.DS_Store
+.localized
+__MACOSX/
+.AppleDouble
+.LSOverride
