@@ -11,9 +11,9 @@ class vec3 {
             e[1] = y;
             e[2] = z;
         }
-        double x() { return e[0];}
-        double y() { return e[1];}
-        double z() { return e[2];}
+        double x() const { return e[0];}
+        double y() const { return e[1];}
+        double z() const { return e[2];}
         const double& operator[](int i) const { 
             if (i > 2) {
                 throw ("Out of dimension");
@@ -29,6 +29,12 @@ class vec3 {
             }
         }
         vec3 operator-() const { return vec3(-e[0], -e[1], -e[2]); }
+        vec3& operator=(vec3 u) {
+            e[0] = u.x();
+            e[1] = u.y();
+            e[2] = u.z();
+            return *this;
+        }
         vec3& operator+=(vec3 v) {
             e[0] += v.x();
             e[1] += v.y();
@@ -65,7 +71,6 @@ class vec3 {
             std::cout << "Vector: (" << e[0] << ", " << e[1] << ", " << e[2] << ")\n";
         }
 };
-
 inline vec3 operator+(vec3 u, vec3 v) {
     return vec3(u.x() + v.x(), u.y() + v.y(), u.z() + v.z());
 }

@@ -34,3 +34,28 @@
             Output via write_color
 - Material: lambertian, metal, dielectric
 
+# Phase 2:
+## Random
+- Under multithreading, random is sharing the glocal state so it will crash the system when threads call random functions.
+- Fix:
+```cpp
+inline random_generator& get_thread_rng() {
+    thread_local random_generator rng;
+    return rng;
+}
+
+inline double random_less_than_1() {
+    return get_thread_rng().next_double();
+}
+```
+- random_generator class uses engine mt19937 and uniform distribution to generate a random number from 0 to 1.0.
+## Tiles
+- Each thread will render a tile of image. The tiles are stored in an array and kept track by index.
+
+# Phase 3:
+## AABB needs
+- A constructor/representation: min_corner, max_corner. This constructor needs to check the given max and min cornner and rearrange them as needed.
+- A hit() method: the slab test, ray-vs-this-box, returning bool within a t_min/t_max range
+- A way to combine two boxes: either a free function or a constructor that takes two aabbs and produces their union — needed for building parent nodes during tree construction
+- A padding to handle zero-thickness degenerate cases
+- longest axis -> it is used to decide which axis direction should be splitted. 
