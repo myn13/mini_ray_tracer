@@ -2,6 +2,7 @@
 #define HITTABLE_H
 #include "core/ray.h"
 #include "core/constant.h"
+#include "bvh_tree/aabb.h"
 class material;
 struct hit_record {
     point3 hit_point;
@@ -22,5 +23,6 @@ class hittable {
     public:
         virtual ~hittable() = default;
         virtual bool get_hit(const ray &r, double t_max, double t_min, hit_record &record) const = 0; //compiler will notice the object missing get_hit
-};
+        virtual aabb bounding_box() const = 0;
+    };
 #endif

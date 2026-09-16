@@ -28,5 +28,12 @@ class hittable_list: public hittable {
             }
             return hit_any;
         }
+        virtual aabb bounding_box() const override {
+            aabb box;
+            for (const auto& o: objects) {
+                box = combine(box, o->bounding_box);
+            }
+            return box;
+        }
 }; 
 #endif

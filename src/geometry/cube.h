@@ -40,6 +40,9 @@ class cube: public hittable {
             record.mat = material_ptr;
             return true;
         }
+        virtual aabb bounding_box() const override {
+            return aabb(point3(x_min, y_min, z_min), point3(x_max, y_max, z_max));
+        }
     private:
         point3 center;
         double edge_length;

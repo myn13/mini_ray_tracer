@@ -9,7 +9,7 @@ class sphere : public hittable {
         std::shared_ptr<material> material_ptr;
     public:
         sphere(point3 c, double r, std::shared_ptr<material> m) : center(c), radius(r), material_ptr(m) {}
-         sphere(point3 c, double r) : center(c), radius(r) {}
+        sphere(point3 c, double r) : center(c), radius(r) {}
         point3 get_center() { return center; }
         double get_radius() {return radius; }
         virtual bool get_hit(const ray &r, double t_max, double t_min, hit_record &record) const override {
@@ -44,6 +44,11 @@ class sphere : public hittable {
             record.mat = material_ptr;
             // std::cout << "hit t=" << root << "\n";
             return true;
+        }
+        virtual aabb bounding_box() const override {
+            point3 min_corner = point3(center.x() - radius, center.y() - radius, center.z() - radius);
+            point3 max_corner = point3(center.x() + radius, center.y() + radius, center.z() + radius);
+            return aabb(min_corner, max_corner);
         }
 };
 #endif
