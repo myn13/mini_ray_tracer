@@ -37,7 +37,10 @@ class aabb {
         point3 get_min() const {
             return min_corner;
         }
-        bool get_hit(const ray& r, double t_min, double t_max) const {
+        point3 get_center() const {
+            return (min_corner + max_corner) / 2;
+        }
+        bool get_hit(const ray& r, double t_max, double t_min) const {
             double t_enter = t_min; 
             double t_exit = t_max;
             for (int i = 0; i < 3; ++i){

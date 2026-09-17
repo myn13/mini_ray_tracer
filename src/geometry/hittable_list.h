@@ -2,6 +2,7 @@
 #define HITTABLE_LIST_H
 #include "hittable.h"
 #include "core/vec3.h"
+#include <algorithm>
 class hittable_list: public hittable {
     public:
         std::vector <std::shared_ptr<hittable>> objects;
@@ -31,7 +32,7 @@ class hittable_list: public hittable {
         virtual aabb bounding_box() const override {
             aabb box;
             for (const auto& o: objects) {
-                box = combine(box, o->bounding_box);
+                box = combine(box, o->bounding_box());
             }
             return box;
         }

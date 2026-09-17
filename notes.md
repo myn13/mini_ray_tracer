@@ -59,3 +59,16 @@ inline double random_less_than_1() {
 - A way to combine two boxes: either a free function or a constructor that takes two aabbs and produces their union — needed for building parent nodes during tree construction
 - A padding to handle zero-thickness degenerate cases
 - longest axis -> it is used to decide which axis direction should be splitted. 
+
+## Build a bvh tree
+```
+build_bvh_node(object_list):
+    compute the bounding box enclosing all objects in the list
+    axis = that box's longest_axis()
+    sort the object list by each object's center position along that axis
+    split the sorted list in half
+    left_child  = build_bvh_node(first half)     # recursive
+    right_child = build_bvh_node(second half)    # recursive
+```
+
+## Edit the object on image
