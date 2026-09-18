@@ -123,7 +123,7 @@ class camera {
         }
     public:
         const double aspect_ratio = 16.0/9.0; 
-        point3 lookfrom = point3(6.5, 1, 0.5); 
+        point3 lookfrom = point3(0, 0, 50); 
         point3 lookat = point3(0, 0, 0);
         vec3 vup = vec3(0, 1, 0);
         double vfov = 90;

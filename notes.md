@@ -72,3 +72,4 @@ build_bvh_node(object_list):
 ```
 
 ## Edit the object on image
+- point3(0,0,0) is the center of the image 
