@@ -7,8 +7,9 @@ class sphere : public hittable {
         point3 center;
         double radius;
         std::shared_ptr<material> material_ptr;
+        aabb bbox;
     public:
-        sphere(point3 c, double r, std::shared_ptr<material> m) : center(c), radius(r), material_ptr(m) {}
+        sphere(point3 c, double r, std::shared_ptr<material> m) : center(c), radius(r), material_ptr(m) { bbox = bounding_box(); }
         sphere(point3 c, double r) : center(c), radius(r) {}
         point3 get_center() { return center; }
         double get_radius() {return radius; }

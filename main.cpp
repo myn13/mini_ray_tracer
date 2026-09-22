@@ -8,6 +8,7 @@
 #include "src/materials/dielectric.h"
 #include "src/geometry/hittable_list.h"
 #include "src/bvh_tree/bvh.h"
+#include "src/geometry/quad.h"
 int main() {
     color maroon = decimal_to_color(128, 0, 0);
     color metallic = decimal_to_color(204,204,204);
@@ -29,6 +30,7 @@ int main() {
     auto glass_mat = std::make_shared<dielectric>(off_white, 1.5);
     auto turquoise_box_mat = std::make_shared<lambertian>(turquoise);
     auto lime_box_mat = std::make_shared<lambertian>(lime);
+    auto lower_teal   = std::make_shared<lambertian>(color(0.2, 0.8, 0.8));
     // Camera
     camera cam;
     std::vector<int> values(10000);
@@ -38,16 +40,18 @@ int main() {
     hittable_list world;
     
     // The walls
-    world.add(std::make_shared<cube>(point3(0, 0, -100), 110, offwhite_wall)); // behind
-    world.add(std::make_shared<cube>(point3(110, 0, 0), 110, pink_wall)); // right
-    world.add(std::make_shared<cube>(point3(-110, 0, 0), 110, purple_wall)); // left
-    world.add(std::make_shared<cube>(point3(0, -110, 0), 110, ground)); // ground
 
-    // object at the center
-    world.add(std::make_shared<sphere>(point3(0, 0, 0), 5, turquoise_box_mat));
-    world.add(std::make_shared<sphere>(point3(-15, -41.875, -20), 13.125, lime_box_mat));
-    world.add(std::make_shared<cube>(point3(20, -49, -20), 12, metal_mat));
-    world.add(std::make_shared<cube>(point3(24, -37, -20), 12, glass_mat));
+    world.add(make_shared<quad>(point3(-3,-2, 5), vec3(0, 0, -20), vec3(0, 20, 0), offwhite_wall));
+    world.add(make_shared<quad>(point3(-2,-2, 0), vec3(20, 0, 0), vec3(0, 20, 0), pink_wall));
+    world.add(make_shared<quad>(point3( 3,-2, 1), vec3(20, 0, 4), vec3(0, 20, 0), purple_wall));
+    world.add(make_shared<quad>(point3(-2, 3, 1), vec3(20, 0, 0), vec3(0, 0, 20), ground));
+    world.add(make_shared<quad>(point3(-2,-3, 5), vec3(20, 0, 0), vec3(0, 0, -20), lower_teal));
+
+    // // object at the center
+    // world.add(std::make_shared<sphere>(point3(0, 0, 0), 5, turquoise_box_mat));
+    // world.add(std::make_shared<sphere>(point3(-15, -41.875, -20), 13.125, lime_box_mat));
+    // world.add(std::make_shared<cube>(point3(20, -49, -20), 12, metal_mat));
+    // world.add(std::make_shared<cube>(point3(24, -37, -20), 12, glass_mat));
 
     // Build world with bvh
     // std::cout << "World has" << world.objects.size() << std::endl;

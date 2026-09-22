@@ -16,5 +16,6 @@ class metal: public material {
             attenuation = albedo;
             return (dot(ray_out.direction(), rec.normal) > 0);
         }
+        color emitted(double u, double v, const point3& p) const override { return color(0, 0, 0);}
 };
 #endif

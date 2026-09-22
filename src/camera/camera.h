@@ -75,7 +75,7 @@ class camera {
                 ray scattered_ray;
                 color attenuation;
                 if(rec.mat->scatter(r, rec, attenuation, scattered_ray)) {
-                    color result = attenuation * ray_color(scattered_ray, world, depth - 1);
+                    color result = attenuation * ray_color(scattered_ray, world, depth - 1) + rec.mat->emitted(0.0, 0.0, rec.hit_point);
                     if (std::isnan(result.r) || std::isnan(result.g) || std::isnan(result.b)) {
                         std::cout << "NaN detected!\n";
                     }

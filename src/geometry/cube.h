@@ -4,7 +4,10 @@
 #include "hittable.h"
 class cube: public hittable {
     public:
-        cube(point3 c, double el, std::shared_ptr<material> m) : center(c), edge_length(el), material_ptr(m) { set_boundary(); }
+        cube(point3 c, double el, std::shared_ptr<material> m) : center(c), edge_length(el), material_ptr(m) { 
+            set_boundary(); 
+            bbox = bounding_box();
+        }
         virtual bool get_hit(const ray &r, double t_max, double t_min, hit_record &record) const override {
             std::vector<double> min_boundary{x_min, y_min, z_min};
             std::vector<double> max_boundary{x_max, y_max, z_max};
@@ -48,6 +51,7 @@ class cube: public hittable {
         double edge_length;
         std::shared_ptr<material> material_ptr;
         double x_max, x_min, y_max, y_min, z_max, z_min;
+        aabb bbox;
         void set_boundary() {
             double half = edge_length / 2;
             x_min = center.x() - half;

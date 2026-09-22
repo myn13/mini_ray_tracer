@@ -70,6 +70,10 @@ class vec3 {
         void show() {
             std::cout << "Vector: (" << e[0] << ", " << e[1] << ", " << e[2] << ")\n";
         }
+        double distance_to_origin() {
+            return std::sqrt(x() * x() + y() * y() + z() * z()); 
+        }
+        
 };
 inline vec3 operator+(vec3 u, vec3 v) {
     return vec3(u.x() + v.x(), u.y() + v.y(), u.z() + v.z());
@@ -110,6 +114,10 @@ inline vec3 refract(const vec3& uv, double eta_over_eta_prime, const vec3& n) {
     vec3 perp = eta_over_eta_prime * (uv + cos_theta * n);
     vec3 parallel = -n * std::sqrt(std::abs(1 - perp.length_squared()));
     return perp + parallel;
+}
+
+inline vec3 normalize(vec3 u) {
+    return u / dot(u, u);
 }
 using point3 = vec3;
 #endif

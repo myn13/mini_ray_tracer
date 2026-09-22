@@ -26,5 +26,6 @@ class dielectric: public material {
             attenuation = albedo;
             return true;
         }
+        color emitted(double u, double v, const point3& p) const override { return color(0, 0, 0); }
 };
 #endif

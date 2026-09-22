@@ -9,5 +9,8 @@ class material {
     public:
         virtual ~material() = default;
         virtual bool scatter(const ray& ray_in, hit_record& rec, color& attenuation, ray& ray_out) const = 0;
+        virtual color emitted(double u, double v, const point3& p) const {
+            return color(0, 0, 0);
+        }
 };
 #endif
