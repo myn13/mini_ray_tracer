@@ -122,15 +122,15 @@ class camera {
             }
         }
     public:
-        const double aspect_ratio = 16.0/9.0; 
-        point3 lookfrom = point3(0, 0, 50); 
-        point3 lookat = point3(0, 0, 0);
+        double aspect_ratio = 1.0; 
+        point3 lookfrom = point3(278, 278, -800); 
+        point3 lookat = point3(278, 278, 0);
         vec3 vup = vec3(0, 1, 0);
-        double vfov = 90;
+        double vfov = 40;
         double focus_distance = 3.4; // world unit
         double defocus_angle = 0;
-        int image_width = 400; //pixel
-        int sample_per_pixel = 50;
+        int image_width = 600; //pixel
+        int sample_per_pixel = 200;
         int max_depth = 50;
         camera() = default;
         camera(point3 lf, point3 la, vec3 v, double vf, double fd, double da, int iw, int spp, int md) {

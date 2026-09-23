@@ -37,5 +37,6 @@ class hittable_list: public hittable {
             }
             return box;
         }
+        
 }; 
 #endif
