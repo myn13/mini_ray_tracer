@@ -83,9 +83,7 @@ class camera {
                 } 
                 return color(0, 0, 0);
             } else {
-                vec3 unit_dir = unit_vector(r.direction());
-                double a = 0.5 * (unit_dir.y() + 1);
-                return a * color(0.5, 0.7, 1.0) + (1 - a) * color(1.0, 1.0, 1.0); // simulate the sky gradient
+                return background;
             }
         }
         void render_tile(const tile& ti, const hittable& world, std::vector <uint8_t> &buffer) {
@@ -132,6 +130,7 @@ class camera {
         int image_width = 600; //pixel
         int sample_per_pixel = 200;
         int max_depth = 50;
+        color background;
         camera() = default;
         camera(point3 lf, point3 la, vec3 v, double vf, double fd, double da, int iw, int spp, int md) {
             lookfrom = lf;
