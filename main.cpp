@@ -9,6 +9,7 @@
 #include "src/geometry/hittable_list.h"
 #include "src/bvh_tree/bvh.h"
 #include "src/geometry/quad.h"
+#include "src/materials/diffuse.h"
 
 int main() {
     color maroon = decimal_to_color(128, 0, 0);
@@ -20,6 +21,7 @@ int main() {
     color pastel_pink = decimal_to_color(248, 200, 220);
     color purple = decimal_to_color(147, 112, 219);
     color off_white = decimal_to_color(250, 249, 246);
+    color bright_white(4, 3, 3);
 
     // Materials
     auto red_lambertian = std::make_shared<lambertian>(maroon);
@@ -32,6 +34,7 @@ int main() {
     auto glass_mat = std::make_shared<dielectric>(off_white, 1.5);
     auto turquoise_box_mat = std::make_shared<lambertian>(turquoise);
     auto lime_box_mat = std::make_shared<lambertian>(lime);
+    auto light = std::make_shared<diffuse_light>(bright_white);
 
     // Camera
     camera cam;
@@ -60,6 +63,9 @@ int main() {
     world.add(std::make_shared<quad>(point3( 2,-2, 0), vec3(0, 4, 0), vec3(0, 0, 4), purple_lambertian)); // right
     world.add(std::make_shared<quad>(point3(-2, 2, 0), vec3(4, 0, 0), vec3(0, 0, 4), offwhite_lambertian)); // top
     world.add(std::make_shared<quad>(point3(-2,-2, 0), vec3(4, 0, 0), vec3(0, 0, 4), turquoise_lambertian)); // down
+
+    // Light Source
+    world.add(std::make_shared<quad>(point3(-0.5, 1.95, 1), vec3(1, 0, 0), vec3(0, 0, 1), light)); // top
 
     double half_edge1 = 0.5;
     double rad1 = 0.5;
