@@ -77,23 +77,22 @@ int main() {
     double center_base_sphere2 = -2 + rad2;
 
     // cube cube(point3 c, double el, std::shared_ptr<material> m) 
-    // world.add(std::make_shared<cube>(point3(-2 + rad1,center_base_cube1, 2), half_edge1 * 2, metal_mat));
-    // world.add(std::make_shared<cube>(point3(0, center_base_cube1, half_edge1), half_edge1 * 2, red_lambertian));
+    world.add(std::make_shared<cube>(point3(-2 + rad1,center_base_cube1, 2), half_edge1 * 2, metal_mat));
+    world.add(std::make_shared<cube>(point3(0, center_base_cube1, half_edge1), half_edge1 * 2, red_lambertian));
 
-    // // sphere
-    // world.add(std::make_shared<sphere>(point3(-2 + rad1, center_base_cube1 + half_edge1 + rad1, 2.3), rad1, glass_mat));
-    // world.add(std::make_shared<sphere>(point3(1, center_base_cube1, 2), rad1, pink_lambertian));
-    // for (int i = 1; i < 4; ++i) {
-    //     world.add(std::make_shared<sphere>(point3(-1.5 + rad2 + i/2, center_base_sphere2, 3.1), rad2, purple_lambertian));
-    // }
+    // sphere
+    world.add(std::make_shared<sphere>(point3(-2 + rad1, center_base_cube1 + half_edge1 + rad1, 2.3), rad1, glass_mat));
+    world.add(std::make_shared<sphere>(point3(1, center_base_cube1, 2), rad1, pink_lambertian));
+    for (int i = 1; i < 4; ++i) {
+        world.add(std::make_shared<sphere>(point3(-1.5 + rad2 + i/2, center_base_sphere2, 3.1), rad2, purple_lambertian));
+    }
 
-    // triangle 
-    std::ifstream infile("/Users/meo/Desktop/Projects/Ray Tracer/src/io/test.obj");
-    std::vector<std::shared_ptr<hittable>> tri = read_obj(infile, red_lambertian);
+    // pyramid from models
+    std::ifstream infile("/Users/meo/Desktop/Projects/Ray Tracer/models/pyramid.obj");
+    std::vector<std::shared_ptr<hittable>> tri = read_obj(infile, glass_mat);
     for (const auto& mesh: tri) {
         world.add(mesh);
     }
-    
 
     // Build world with bvh
     auto bvh_world = std::make_shared<bvh_node>(world);
