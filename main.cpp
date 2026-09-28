@@ -87,9 +87,9 @@ int main() {
         world.add(std::make_shared<sphere>(point3(-1.5 + rad2 + i/2, center_base_sphere2, 3.1), rad2, purple_lambertian));
     }
 
-    // pyramid from models
-    std::ifstream infile("/Users/meo/Desktop/Projects/Ray Tracer/models/pyramid.obj");
-    std::vector<std::shared_ptr<hittable>> tri = read_obj(infile, glass_mat);
+    // from models
+    std::ifstream infile("/Users/meo/Desktop/Projects/Ray Tracer/models/monkey.obj");
+    std::vector<std::shared_ptr<hittable>> tri = read_obj(infile, pink_lambertian);
     for (const auto& mesh: tri) {
         world.add(mesh);
     }
