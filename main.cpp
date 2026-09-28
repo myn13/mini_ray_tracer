@@ -88,7 +88,7 @@ int main() {
     }
 
     // from models
-    std::ifstream infile("/Users/meo/Desktop/Projects/Ray Tracer/models/monkey.obj");
+    std::ifstream infile("../models/monkey.obj");
     std::vector<std::shared_ptr<hittable>> tri = read_obj(infile, pink_lambertian);
     for (const auto& mesh: tri) {
         world.add(mesh);
