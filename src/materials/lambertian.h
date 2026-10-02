@@ -18,5 +18,6 @@ class lambertian: public material {
             return true;
         } 
         color emitted(double u, double v, const point3& p) const override { return color(0, 0, 0); }
+        color get_albedo(){return albedo;}
 };
 #endif

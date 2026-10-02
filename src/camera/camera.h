@@ -5,7 +5,9 @@
 #include "math/random_generator.h"
 #include "core/color.h"
 #include "materials/material.h"
+#include "materials/lambertian.h"
 #include "io/fill_color.cpp"
+#include "geometry/quad.h"
 #include "tiles.h"
 #include <fstream>
 #include <atomic>
@@ -65,7 +67,31 @@ class camera {
             vec3 ray_dir = pixel_sample - ray_ori;
             return ray(ray_ori, ray_dir);
         }
-        color ray_color(const ray& r, const hittable& world, int depth) {
+        color direct_light_contribution(const hit_record& rec, const vec3& surface_normal, std::shared_ptr<lambertian>& mat, const hittable& world, std::shared_ptr<quad>& light) {
+            point3 light_point = light->sample_point();
+            vec3 to_light = light_point - rec.hit_point;
+            double distance_squared = to_light.length_squared();
+            vec3 light_direction = unit_vector(to_light);
+            hit_record shadow_record = rec;
+            ray shadow_ray = ray(rec.hit_point, to_light);
+            // if there is something block the path
+            if (world.get_hit(shadow_ray, INF, 0.001, shadow_record)) {
+                return color(0, 0, 0);
+            }
+            double light_cosine = fabs(dot(light->normal, light_direction))/to_light.length();
+            if (light_cosine < 1e-8) {
+                return color(0, 0, 0); // back face
+            }
+            double pdf = distance_squared / (light_cosine * light->quad_area());
+            if (pdf <= 0) {
+                return color(0, 0, 0);
+            }
+            double surface_cosine = std::max(0.0, dot(surface_normal, light_direction));
+            color brdf_value = mat->get_albedo() / PI;
+            color emitted = light->material_ptr->emitted(0, 0, light_point);
+            return emitted * brdf_value * surface_cosine / pdf;
+        }
+        color ray_color(const ray& r, const hittable& world, int depth, bool count_emission = true) {
             if (depth <= 0) {
                 // std::cout << "Depth exhausted\n";
                 return color(0, 0, 0);
@@ -76,7 +102,14 @@ class camera {
                 color attenuation;
                 color color_from_emission = rec.mat->emitted(0.0, 0.0, rec.hit_point);
                 if(rec.mat->scatter(r, rec, attenuation, scattered_ray)) {
-                    color result = attenuation * ray_color(scattered_ray, world, depth - 1) + color_from_emission;
+                    color direct = color(0, 0, 0);
+                    auto lambert_mat = std::dynamic_pointer_cast<lambertian>(rec.mat);
+                    bool next_counts_emission = true;
+                    if (lambert_mat) {
+                        direct = direct_light_contribution(rec, rec.normal, lambert_mat, world, light_quad);
+                        next_counts_emission = false;
+                    } 
+                    color result = attenuation * ray_color(scattered_ray, world, depth - 1, next_counts_emission) + color_from_emission + direct;
                     if (std::isnan(result.r) || std::isnan(result.g) || std::isnan(result.b)) {
                         std::cout << "NaN detected!\n";
                     }
@@ -132,6 +165,7 @@ class camera {
         int sample_per_pixel = 200;
         int max_depth = 50;
         color background;
+        std::shared_ptr<quad> light_quad; 
         camera() = default;
         camera(point3 lf, point3 la, vec3 v, double vf, double fd, double da, int iw, int spp, int md) {
             lookfrom = lf;

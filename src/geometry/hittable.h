@@ -3,6 +3,7 @@
 #include "core/ray.h"
 #include "core/constant.h"
 #include "bvh_tree/aabb.h"
+#include "math/random_generator.h"
 class material;
 struct hit_record {
     point3 hit_point;

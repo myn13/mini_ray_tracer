@@ -37,6 +37,8 @@ int main() {
     auto lime_box_mat = std::make_shared<lambertian>(lime);
     auto light = std::make_shared<diffuse_light>(bright_white);
 
+    // light
+    auto my_light = std::make_shared<quad>(point3(-0.5, 1.95, 1), vec3(1, 0, 0), vec3(0, 0, 1), light);
     // Camera
     camera cam;
 
@@ -52,6 +54,7 @@ int main() {
     cam.background = color(0.7, 0.8, 1.0);
 
     cam.defocus_angle = 0;
+    cam.light_quad = my_light;
     std::vector<int> values(10000);
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -66,7 +69,7 @@ int main() {
     world.add(std::make_shared<quad>(point3(-2,-2, 0), vec3(4, 0, 0), vec3(0, 0, 4), turquoise_lambertian)); // down
 
     // Light Source
-    world.add(std::make_shared<quad>(point3(-0.5, 1.95, 1), vec3(1, 0, 0), vec3(0, 0, 1), light)); // top
+    world.add(my_light); // top
 
     // Objects
     double half_edge1 = 0.5;
