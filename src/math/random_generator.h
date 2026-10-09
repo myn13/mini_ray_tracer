@@ -1,7 +1,9 @@
 #ifndef RANDOM_GENERATOR_H
 #define RANDOM_GENERATOR_H
 #include <random>
+#include <cmath>
 #include "core/vec3.h"
+#include "core/constant.h"
 class random_generator {
     private:
         std::mt19937 engine;
@@ -41,9 +43,19 @@ inline vec3 random_in_unit_disk() {
 inline vec3 random_unit_vector() {
     while (true) {
         vec3 temp(random_double(-1, 1), random_double(-1, 1), random_double(-1, 1));
-        if (temp.length_squared() < 1) {
-            return temp;
+        double lensq = temp.length_squared();
+        if (1e-160 < lensq && lensq <= 1.0) {
+            return temp / std::sqrt(lensq);
         }
     }
+}
+inline vec3 random_cosine_direction() {
+    double r1 = random_less_than_1();
+    double r2 = random_less_than_1();
+    double phi = 2 * PI * r1;
+    double x = std::cos(phi) * std::sqrt(r2);
+    double y = std::sin(phi) * std::sqrt(r2);
+    double z = std::sqrt(1.0 - r2);
+    return vec3(x, y, z);
 }
 #endif

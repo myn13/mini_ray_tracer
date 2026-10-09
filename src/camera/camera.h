@@ -67,33 +67,34 @@ class camera {
             vec3 ray_dir = pixel_sample - ray_ori;
             return ray(ray_ori, ray_dir);
         }
-        color direct_light_contribution(const hit_record& rec, const vec3& surface_normal, std::shared_ptr<lambertian>& mat, const hittable& world, std::shared_ptr<quad>& light) {
-            point3 light_point = light->sample_point();
-            vec3 to_light = light_point - rec.hit_point;
-            double distance_squared = to_light.length_squared();
-            vec3 light_direction = unit_vector(to_light);
-            hit_record shadow_record = rec;
-            ray shadow_ray = ray(rec.hit_point, to_light);
-            // if there is something block the path
-            if (world.get_hit(shadow_ray, INF, 0.001, shadow_record)) {
-                return color(0, 0, 0);
-            }
-            double light_cosine = fabs(dot(light->normal, light_direction))/to_light.length();
-            if (light_cosine < 1e-8) {
-                return color(0, 0, 0); // back face
-            }
-            double pdf = distance_squared / (light_cosine * light->quad_area());
-            if (pdf <= 0) {
-                return color(0, 0, 0);
-            }
-            double surface_cosine = std::max(0.0, dot(surface_normal, light_direction));
-            color brdf_value = mat->get_albedo() / PI;
-            color emitted = light->material_ptr->emitted(0, 0, light_point);
-            return emitted * brdf_value * surface_cosine / pdf;
+        vec3 cosine_sample_hemisphere(const vec3& n) const {
+            vec3 local = random_cosine_direction();
+            vec3 w = n;
+            vec3 a = (std::fabs(w.x()) > 0.9) ? vec3(0, 1, 0) : vec3(1, 0, 0);
+            vec3 v = unit_vector(cross(w, a));
+            vec3 u = cross(w, v);
+            return u * local.x() + v * local.y() + w * local.z();
         }
-        color ray_color(const ray& r, const hittable& world, int depth, bool count_emission = true) {
+        double cosine_pdf(const vec3& n, const vec3& direction) const {
+            double cosine = dot(n, unit_vector(direction));
+            return cosine <= 0 ? 0 : cosine / PI;
+        }
+        vec3 sample_mixture_direction(const hit_record& rec) const {
+            if (light_quad && random_less_than_1() < 0.5) {
+                return light_quad->sample_point() - rec.hit_point;
+            }
+            return cosine_sample_hemisphere(rec.normal);
+        }
+        double mixture_pdf(const hit_record& rec, const vec3& direction) const {
+            double pdf = cosine_pdf(rec.normal, direction);
+            if (light_quad) {
+                hit_record light_rec;
+                pdf = 0.5 * pdf + 0.5 * light_quad->pdf_for_direction(rec.hit_point, direction, light_rec);
+            }
+            return pdf;
+        }
+        color ray_color(const ray& r, const hittable& world, int depth) {
             if (depth <= 0) {
-                // std::cout << "Depth exhausted\n";
                 return color(0, 0, 0);
             }
             hit_record rec;
@@ -101,20 +102,29 @@ class camera {
                 ray scattered_ray;
                 color attenuation;
                 color color_from_emission = rec.mat->emitted(0.0, 0.0, rec.hit_point);
-                if(rec.mat->scatter(r, rec, attenuation, scattered_ray)) {
-                    color direct = color(0, 0, 0);
-                    auto lambert_mat = std::dynamic_pointer_cast<lambertian>(rec.mat);
-                    bool next_counts_emission = true;
-                    if (lambert_mat) {
-                        direct = direct_light_contribution(rec, rec.normal, lambert_mat, world, light_quad);
-                        next_counts_emission = false;
-                    } 
-                    color result = attenuation * ray_color(scattered_ray, world, depth - 1, next_counts_emission) + color_from_emission + direct;
+                auto lambert_mat = std::dynamic_pointer_cast<lambertian>(rec.mat);
+                if (lambert_mat) {
+                    vec3 scatter_dir = sample_mixture_direction(rec);
+                    double pdf = mixture_pdf(rec, scatter_dir);
+                    double surface_cosine = std::max(0.0, dot(rec.normal, unit_vector(scatter_dir)));
+                    if (pdf <= 0 || surface_cosine <= 0) {
+                        return color_from_emission;
+                    }
+                    scattered_ray = ray(rec.hit_point, scatter_dir);
+                    color brdf_value = lambert_mat->get_albedo() / PI;
+                    color result = color_from_emission + brdf_value * surface_cosine * ray_color(scattered_ray, world, depth - 1) / pdf;
                     if (std::isnan(result.r) || std::isnan(result.g) || std::isnan(result.b)) {
                         std::cout << "NaN detected!\n";
                     }
                     return result;
-                } 
+                }
+                if (rec.mat->scatter(r, rec, attenuation, scattered_ray)) {
+                    color result = attenuation * ray_color(scattered_ray, world, depth - 1) + color_from_emission;
+                    if (std::isnan(result.r) || std::isnan(result.g) || std::isnan(result.b)) {
+                        std::cout << "NaN detected!\n";
+                    }
+                    return result;
+                }
                 return color_from_emission;
             } else {
                 return background;
