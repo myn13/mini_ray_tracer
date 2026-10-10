@@ -12,6 +12,7 @@
 #include <fstream>
 #include <atomic>
 #include <thread>
+#include <cmath>
 class camera {
     private:
         vec3 u, v, w; // local coordinate system
@@ -73,27 +74,50 @@ class camera {
             vec3 a = (std::fabs(w.x()) > 0.9) ? vec3(0, 1, 0) : vec3(1, 0, 0);
             vec3 v = unit_vector(cross(w, a));
             vec3 u = cross(w, v);
-            return u * local.x() + v * local.y() + w * local.z();
+            return unit_vector(u * local.x() + v * local.y() + w * local.z());
         }
         double cosine_pdf(const vec3& n, const vec3& direction) const {
             double cosine = dot(n, unit_vector(direction));
             return cosine <= 0 ? 0 : cosine / PI;
         }
-        vec3 sample_mixture_direction(const hit_record& rec) const {
-            if (light_quad && random_less_than_1() < 0.5) {
-                return light_quad->sample_point() - rec.hit_point;
+        color finite_or_black(const color& c) const {
+            if (!std::isfinite(c.r) || !std::isfinite(c.g) || !std::isfinite(c.b)) {
+                return color(0, 0, 0);
             }
-            return cosine_sample_hemisphere(rec.normal);
+            return c;
         }
-        double mixture_pdf(const hit_record& rec, const vec3& direction) const {
-            double pdf = cosine_pdf(rec.normal, direction);
-            if (light_quad) {
-                hit_record light_rec;
-                pdf = 0.5 * pdf + 0.5 * light_quad->pdf_for_direction(rec.hit_point, direction, light_rec);
+        color direct_light_contribution(const hit_record& rec, const vec3& surface_normal, std::shared_ptr<lambertian>& mat, const hittable& world) {
+            if (!light_quad) {
+                return color(0, 0, 0);
             }
-            return pdf;
+            point3 light_point = light_quad->sample_point();
+            vec3 to_light = light_point - rec.hit_point;
+            double distance = to_light.length();
+            if (distance < 1e-6) {
+                return color(0, 0, 0);
+            }
+            vec3 light_direction = to_light / distance;
+            double surface_cosine = std::max(0.0, dot(surface_normal, light_direction));
+            double light_cosine = std::fabs(dot(light_quad->normal, -light_direction));
+            if (surface_cosine <= 0 || light_cosine < 1e-8) {
+                return color(0, 0, 0);
+            }
+            hit_record shadow_record;
+            ray shadow_ray(rec.hit_point, light_direction);
+            if (world.get_hit(shadow_ray, distance - 0.001, 0.001, shadow_record)) {
+                return color(0, 0, 0);
+            }
+            double distance_squared = distance * distance;
+            distance_squared = std::max(distance * distance, 0.7);
+            double pdf = distance_squared / (light_cosine * light_quad->quad_area());
+            if (pdf <= 0) {
+                return color(0, 0, 0);
+            }
+            color brdf_value = mat->get_albedo() / PI;
+            color emitted = light_quad->material_ptr->emitted(shadow_ray, rec, 0, 0, light_point);
+            return emitted * brdf_value * surface_cosine / pdf;
         }
-        color ray_color(const ray& r, const hittable& world, int depth) {
+        color ray_color(const ray& r, const hittable& world, int depth, bool count_emission = true) {
             if (depth <= 0) {
                 return color(0, 0, 0);
             }
@@ -101,29 +125,23 @@ class camera {
             if (world.get_hit(r, INF, 0.001, rec)) {
                 ray scattered_ray;
                 color attenuation;
-                color color_from_emission = rec.mat->emitted(0.0, 0.0, rec.hit_point);
+                color color_from_emission = count_emission ? rec.mat->emitted(r, rec, 0.0, 0.0, rec.hit_point) : color(0, 0, 0);
                 auto lambert_mat = std::dynamic_pointer_cast<lambertian>(rec.mat);
                 if (lambert_mat) {
-                    vec3 scatter_dir = sample_mixture_direction(rec);
-                    double pdf = mixture_pdf(rec, scatter_dir);
-                    double surface_cosine = std::max(0.0, dot(rec.normal, unit_vector(scatter_dir)));
+                    color direct = direct_light_contribution(rec, rec.normal, lambert_mat, world);
+                    vec3 scatter_dir = cosine_sample_hemisphere(rec.normal);
+                    double pdf = cosine_pdf(rec.normal, scatter_dir);
+                    double surface_cosine = std::max(0.0, dot(rec.normal, scatter_dir));
                     if (pdf <= 0 || surface_cosine <= 0) {
-                        return color_from_emission;
+                        return finite_or_black(color_from_emission + direct);
                     }
                     scattered_ray = ray(rec.hit_point, scatter_dir);
                     color brdf_value = lambert_mat->get_albedo() / PI;
-                    color result = color_from_emission + brdf_value * surface_cosine * ray_color(scattered_ray, world, depth - 1) / pdf;
-                    if (std::isnan(result.r) || std::isnan(result.g) || std::isnan(result.b)) {
-                        std::cout << "NaN detected!\n";
-                    }
-                    return result;
+                    color indirect = brdf_value * surface_cosine * ray_color(scattered_ray, world, depth - 1, false) / pdf;
+                    return finite_or_black(color_from_emission + direct + indirect);
                 }
                 if (rec.mat->scatter(r, rec, attenuation, scattered_ray)) {
-                    color result = attenuation * ray_color(scattered_ray, world, depth - 1) + color_from_emission;
-                    if (std::isnan(result.r) || std::isnan(result.g) || std::isnan(result.b)) {
-                        std::cout << "NaN detected!\n";
-                    }
-                    return result;
+                    return finite_or_black(attenuation * ray_color(scattered_ray, world, depth - 1, true) + color_from_emission);
                 }
                 return color_from_emission;
             } else {
@@ -171,8 +189,8 @@ class camera {
         double vfov = 40;
         double focus_distance = 3.4; // world unit
         double defocus_angle = 0;
-        int image_width = 600; //pixel
-        int sample_per_pixel = 200;
+        int image_width = 1200; //pixel
+        int sample_per_pixel = 400;
         int max_depth = 50;
         color background;
         std::shared_ptr<quad> light_quad; 
@@ -193,29 +211,11 @@ class camera {
         
         void render(const hittable& world) {
             initialize();
-            // first version: show ppm image
             std::ofstream out(output_path);
             if (!out) {
                 std::clog << "Failed to open output file: " << output_path << "\n";
                 return;
             }
-            // out << "P3\n" << image_width << ' ' << image_height << "\n255\n";
-            // for (int i = 0 ; i < image_height; ++i) {
-            //     for (int j = 0; j < image_width; ++j) {
-            //         color c(0,0,0);
-            //         size_t buffer_index = (static_cast<size_t>(i) * image_width + j) * 3;
-            //         for (int h = 0; h < sample_per_pixel; ++h) {
-            //             ray r = get_ray_at(j, i);
-            //             c += ray_color(r, world, max_depth);
-            //         }
-            //         // write_color_ppm(out, c, sample_per_pixel);
-            //         write_into_buffer(buffer, buffer_index, c, sample_per_pixel);
-            //     }
-            // }
-            // for (int i = 0; i < 101; ++i) {
-            //     std::cout << static_cast <int> (buffer[i]) << " ";
-            // }
-            // make workers
             buffer.resize(image_width * image_height * 3);
             auto tiles = compute_tile_list(image_width, image_height, 32);
             std::atomic<int> next_tile{0};
@@ -237,9 +237,6 @@ class camera {
                 th.join();
             }
             write_buffer_to_ppm(buffer, image_width, image_height, output_path);
-            // std::cout << "Using " << number_threads << " threads\n";
-            // std::cout << "Generated " << tiles.size() << " tiles\n";
-            // std::cout << std::endl;
         }
 };
 #endif

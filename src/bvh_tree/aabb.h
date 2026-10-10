@@ -44,6 +44,10 @@ class aabb {
             double t_enter = t_min; 
             double t_exit = t_max;
             for (int i = 0; i < 3; ++i){
+                if (std::fabs(r.direction()[i]) < 1e-12) {
+                    if (r.origin()[i] < min_corner[i] || r.origin()[i] > max_corner[i]) return false;
+                    continue;
+                }
                 double t_lower = (min_corner[i] - r.origin()[i]) / r.direction()[i];
                 double t_upper = (max_corner[i] - r.origin()[i]) / r.direction()[i];
                 if (t_lower > t_upper) {

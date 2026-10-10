@@ -10,7 +10,8 @@ class quad : public hittable {
         double d;
         aabb bbox;
         bool is_interior(double a, double b) const {
-            if (a <= 1 && a >= 0 && b <= 1  && b >= 0) return true;
+            const double eps = 1e-6;
+            if (a <= 1 + eps && a >= -eps && b <= 1 + eps && b >= -eps) return true;
             return false;
         }
     public:
