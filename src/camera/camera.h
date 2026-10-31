@@ -64,7 +64,7 @@ class camera {
         ray get_ray_at(int i, int j) const {
             vec3 jitter(random_less_than_1() - 0.5, random_less_than_1() - 0.5, 0);
             point3 pixel_sample = pixel_00_at + (i + jitter.x()) * pixel_delta_u + (j + jitter.y()) * pixel_delta_v;
-            point3 ray_ori = defocus_angle <= 0 ? lookfrom : defocus_sample();
+            point3 ray_ori = defocus_angle <= 0.01 ? lookfrom : defocus_sample();
             vec3 ray_dir = pixel_sample - ray_ori;
             return ray(ray_ori, ray_dir);
         }
@@ -148,20 +148,72 @@ class camera {
                 return background;
             }
         }
+        float compute_color_variance(std::vector<color>& sample_colors) {
+            if (sample_colors.size() <= 1) return 0.0f;
+            float n = static_cast<float> (sample_colors.size());
+            float mean_r = 0.0f;
+            float mean_g = 0.0f;
+            float mean_b = 0.0f;
+            for (const auto& col: sample_colors) {
+                mean_r += col.r;
+                mean_g += col.g;
+                mean_b += col.b;
+            }
+            mean_r /= n;
+            mean_g /= n;
+            mean_b /= n;
+
+            float var_r = 0.0f, var_g = 0.0f, var_b = 0.0f;
+            for (const auto& col : sample_colors) {
+                float dr = col.r - mean_r;
+                float dg = col.g - mean_g;
+                float db = col.b - mean_b;
+                
+                var_r += dr * dr;
+                var_g += dg * dg;
+                var_b += db * db;
+            }
+            
+            var_r /= (n - 1);
+            var_g /= (n - 1);
+            var_b /= (n - 1);
+            return (var_r + var_g + var_b) / 3.0f;
+        }
         void render_tile(const tile& ti, const hittable& world, std::vector <uint8_t> &buffer) {
             int tile_w = ti.width;
             int tile_h = ti.height;
             int tile_x = ti.x;
             int tile_y = ti.y;
+
+            int min_spp = 8;
+            int max_spp = sample_per_pixel;
+            int batch_size = 8;
+            float error_threshold = 0.002f;
+
             for (int r = tile_y; r < tile_y + tile_h; ++r) {
                 for (int c = tile_x; c < tile_x + tile_w; ++c) {
                     color m(0, 0, 0);
-                    for (int s = 0; s < sample_per_pixel; ++s) {
-                        ray ra = get_ray_at(c, r);
-                        m += ray_color(ra, world, max_depth);
+                    std::vector<color> sample_colors;
+                    sample_colors.reserve(max_spp);
+                    int samples_taken = 0;
+                    for (int s = 0; s < max_spp; s += batch_size) {
+                        for (int b = 0; b < batch_size && (s + b) < max_spp; ++b) {
+                            ray ra = get_ray_at(c, r);
+                            color sample_color = ray_color(ra, world, max_depth);
+                            m += sample_color;
+                            sample_colors.push_back(sample_color);
+                            samples_taken++;
+                        }
+                        if (samples_taken >= min_spp) {
+                            float current_variance = compute_color_variance(sample_colors);
+                            if (current_variance < error_threshold) {
+                                break;
+                            }
+                        }
                     }
+                    
                     size_t index = static_cast<size_t>(r * image_width + c ) * 3;
-                    write_into_buffer(buffer, index, m, sample_per_pixel);
+                    write_into_buffer(buffer, index, m, samples_taken);
                 }
             }
         }
@@ -190,9 +242,9 @@ class camera {
         double focus_distance = 3.4; // world unit
         double defocus_angle = 0;
         int image_width = 1200; //pixel
-        int sample_per_pixel = 400;
+        int sample_per_pixel = 32;
         int max_depth = 50;
-        color background;
+        color background = color(0.7, 0.8, 1.0);
         std::shared_ptr<quad> light_quad; 
         camera() = default;
         camera(point3 lf, point3 la, vec3 v, double vf, double fd, double da, int iw, int spp, int md) {
@@ -206,10 +258,8 @@ class camera {
             sample_per_pixel = spp;
             max_depth = md;
         }
-        std::string output_path = "render_world.ppm";
         std::vector<uint8_t> buffer;
-        
-        void render(const hittable& world) {
+        void render(const hittable& world, std::string output_path) {
             initialize();
             std::ofstream out(output_path);
             if (!out) {

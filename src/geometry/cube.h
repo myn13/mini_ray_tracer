@@ -60,9 +60,6 @@ class cube: public hittable {
             y_max = center.y() + half;
             z_min = center.z() - half;
             z_max = center.z() + half;
-            // std::cout << "x in range of " << x_min << " " << x_max << std::endl;
-            // std::cout << "y in range of " << y_min << " " << y_max << std::endl;
-            // std::cout << "z in range of " << z_min << " " << z_max << std::endl;
         }
 };
 #endif

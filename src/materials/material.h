@@ -13,4 +13,5 @@ class material {
             return color(0, 0, 0);
         }
 };
+
 #endif

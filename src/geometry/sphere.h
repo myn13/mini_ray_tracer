@@ -18,7 +18,7 @@ class sphere : public hittable {
             vec3 ray_dir = r.direction();
             vec3 ray_ori = r.origin();
             // std::cout << "Testing ray: origin=" << ray_ori.x() << "," << ray_ori.y() << "," << ray_ori.z()
-        //   << " dir=" << ray_dir.x() << "," << ray_dir.y() << "," << ray_dir.z() << "\n";
+            //   << " dir=" << ray_dir.x() << "," << ray_dir.y() << "," << ray_dir.z() << "\n";
             // oc = a - c with a: ray origin and c: center of the sphere -> origin minus center
             point3 oc = ray_ori - center;
             double ocb = 2 * dot(oc, ray_dir);
